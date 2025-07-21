@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-  // Кнопка "Наверх"
+  // ==================== Кнопка "Наверх" ====================
   const backToTopButton = document.createElement('button');
   backToTopButton.className = 'back-to-top';
   backToTopButton.innerHTML = '↑';
@@ -8,11 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.body.appendChild(backToTopButton);
   
   window.addEventListener('scroll', function() {
-    if (window.pageYOffset > 300) {
-      backToTopButton.classList.add('show');
-    } else {
-      backToTopButton.classList.remove('show');
-    }
+    backToTopButton.classList.toggle('show', window.pageYOffset > 300);
   });
   
   backToTopButton.addEventListener('click', function(e) {
@@ -23,45 +19,60 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Анимация элементов при загрузке
-  const animateOnLoad = () => {
-    const elements = document.querySelectorAll('section, .image-container, .advantage, .form-group');
-    elements.forEach((el, index) => {
+  // ==================== Анимация элементов ====================
+  const animateElements = () => {
+    document.querySelectorAll('section, .image-container, .advantage, .form-group').forEach((el, index) => {
       setTimeout(() => {
         el.style.opacity = '1';
         el.style.transform = 'translateY(0)';
       }, 150 * index);
     });
   };
+  setTimeout(animateElements, 500);
 
-  setTimeout(animateOnLoad, 500);
-
-  // Регистрация Service Worker для PWA
+  // ==================== PWA Функционал ====================
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(registration => {
-          console.log('ServiceWorker зарегистрирован успешно:', registration.scope);
-          
-          // Проверка обновлений каждые 24 часа
-          setInterval(() => {
-            registration.update().then(() => {
-              console.log('Проверка обновлений ServiceWorker');
-            });
-          }, 86400000);
-        })
-        .catch(err => {
-          console.log('Ошибка регистрации ServiceWorker:', err);
+    window.addEventListener('load', async () => {
+      try {
+        const registration = await navigator.serviceWorker.register('/service-worker.js');
+        console.log('ServiceWorker успешно зарегистрирован:', registration.scope);
+        
+        // Автоматическая проверка обновлений
+        registration.addEventListener('updatefound', () => {
+          console.log('Обнаружено обновление Service Worker');
         });
+        
+        // Проверка обновлений при фокусе на вкладке
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) registration.update();
+        });
+        
+      } catch (err) {
+        console.error('Ошибка регистрации ServiceWorker:', err);
+      }
     });
   }
 
-  // Отображение установки PWA
+  // ==================== Установка PWA ====================
   let deferredPrompt;
   const installButton = document.createElement('button');
   installButton.className = 'install-btn';
   installButton.textContent = 'Установить приложение';
-  installButton.style.display = 'none';
+  installButton.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    background: #E63946;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 1000;
+    display: none;
+  `;
   document.body.appendChild(installButton);
 
   window.addEventListener('beforeinstallprompt', (e) => {
@@ -69,28 +80,45 @@ document.addEventListener('DOMContentLoaded', function() {
     deferredPrompt = e;
     installButton.style.display = 'block';
     
-    installButton.addEventListener('click', () => {
+    installButton.onclick = async () => {
       installButton.style.display = 'none';
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('Пользователь установил PWA');
-        } else {
-          console.log('Пользователь отказался от установки');
-        }
-        deferredPrompt = null;
-      });
-    });
+      try {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`Пользователь ${outcome === 'accepted' ? 'принял' : 'отклонил'} установку`);
+      } catch (err) {
+        console.error('Ошибка установки:', err);
+      }
+      deferredPrompt = null;
+    };
   });
 
-  // Проверка режима PWA
   window.addEventListener('appinstalled', () => {
-    console.log('Приложение успешно установлено');
+    console.log('PWA успешно установлено');
     installButton.style.display = 'none';
+    // Можно показать сообщение об успешной установке
   });
 
-  // Проверка, открыто ли приложение как PWA
-  if (window.matchMedia('(display-mode: standalone)').matches) {
-    console.log('Запущено как PWA');
+  // ==================== Проверка PWA режима ====================
+  const checkPWAStatus = () => {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('Запущено в PWA режиме');
+      // Можно скрыть установочную кнопку
+      installButton.style.display = 'none';
+    }
+  };
+  
+  // Проверяем при загрузке и при изменении режима
+  checkPWAStatus();
+  window.matchMedia('(display-mode: standalone)').addListener(checkPWAStatus);
+});
+
+// ==================== Оптимизация производительности ====================
+// Отложенная загрузка не критичных ресурсов
+window.addEventListener('load', function() {
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(() => {
+      // Загрузка дополнительных ресурсов
+    });
   }
 });
