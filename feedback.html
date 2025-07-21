@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Обратная связь | Пейнтбольный клуб "Стрела"</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="feedback">
+  <header>
+    <div class="header-content">
+      <div class="header-text">
+        <h1 class="text-center">Обратная связь</h1>
+      </div>
+    </div>
+  </header>
+
+  <nav>
+    <ul>
+      <li><a href="index.html">Главная</a></li>
+      <li><a href="equipment.html">Оборудование</a></li>
+      <li><a href="field.html">Площадка</a></li>
+      <li><a href="advantages.html">Преимущества</a></li>
+      <li><a href="feedback.html">Контакты</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <section>
+      <h2>Свяжитесь с нами</h2>
+      <form id="feedbackForm">
+        <div class="form-group">
+          <label for="name">ФИО:</label>
+          <input type="text" id="name" name="name" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="phone">Номер телефона:</label>
+          <input type="tel" id="phone" name="phone" required pattern="\+?[0-9\s\-\(\)]+">
+        </div>
+        
+        <div class="form-group">
+          <label for="message">Сообщение:</label>
+          <textarea id="message" name="message" rows="5" required></textarea>
+        </div>
+        
+        <button type="submit" class="submit-btn">Отправить</button>
+      </form>
+      
+      <div id="responseMessage" class="hidden"></div>
+      
+      <div id="lastMessages">
+        <h3>Последние сообщения:</h3>
+        <div id="messagesList"></div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p>&copy; 2023 Пейнтбольный клуб "Стрела". Все права защищены.</p>
+    <p>Телефон: +7 (123) 456-78-90 | Email: info@strela-paintball.ru</p>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      loadLastMessages();
+      
+      const form = document.getElementById('feedbackForm');
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        
+        fetch('process_feedback.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          const responseDiv = document.getElementById('responseMessage');
+          responseDiv.classList.remove('hidden');
+          
+          if (data.success) {
+            responseDiv.innerHTML = '<p class="success">Ваше сообщение успешно отправлено!</p>';
+            form.reset();
+            loadLastMessages();
+          } else {
+            responseDiv.innerHTML = `<p class="error">Ошибка: ${data.message}</p>`;
+          }
+          
+          setTimeout(() => {
+            responseDiv.classList.add('hidden');
+          }, 5000);
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          const responseDiv = document.getElementById('responseMessage');
+          responseDiv.classList.remove('hidden');
+          responseDiv.innerHTML = '<p class="error">Произошла ошибка при отправке формы.</p>';
+        });
+      });
+      
+      function loadLastMessages() {
+        fetch('get_messages.php')
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              const messagesList = document.getElementById('messagesList');
+              messagesList.innerHTML = '';
+              
+              if (data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                  const messageDiv = document.createElement('div');
+                  messageDiv.className = 'message-item';
+                  messageDiv.innerHTML = `
+                    <p><strong>${msg.name}</strong> (${msg.phone})</p>
+                    <p>${msg.message}</p>
+                    <p class="message-date">${new Date(msg.created_at).toLocaleString()}</p>
+                    <hr>
+                  `;
+                  messagesList.appendChild(messageDiv);
+                });
+              } else {
+                messagesList.innerHTML = '<p>Нет сообщений для отображения.</p>';
+              }
+            }
+          })
+          .catch(error => console.error('Error loading messages:', error));
+      }
+    });
+  </script>
+</body>
+</html>
