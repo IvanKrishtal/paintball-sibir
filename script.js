@@ -1,34 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
-  // Кнопка "Наверх"
-  const backToTopButton = document.createElement('button');
-  backToTopButton.className = 'back-to-top';
-  backToTopButton.innerHTML = '↑';
-  backToTopButton.title = 'Наверх';
-  document.body.appendChild(backToTopButton);
-  
-  window.addEventListener('scroll', function() {
-    if (window.pageYOffset > 300) {
-      backToTopButton.classList.add('show');
-    } else {
-      backToTopButton.classList.remove('show');
-    }
-  });
-  
-  backToTopButton.addEventListener('click', function(e) {
-    e.preventDefault();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-
   // Анимация элементов
-  const animateElements = () => {
-    document.querySelectorAll('section, .image-container').forEach((el, i) => {
-      setTimeout(() => {
-        el.style.opacity = '1';
-        el.style.transform = 'translateY(0)';
-      }, 150 * i);
-    });
-  };
-  setTimeout(animateElements, 500);
+  document.querySelectorAll('section, .image-container').forEach(el => {
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+  });
 
   // PWA Установка
   let deferredPrompt;
@@ -46,7 +21,9 @@ document.addEventListener('DOMContentLoaded', function() {
       installBtn.style.display = 'none';
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      console.log(outcome === 'accepted' ? 'Установлено' : 'Отменено');
+      if (outcome === 'accepted') {
+        console.log('Приложение установлено');
+      }
       deferredPrompt = null;
     });
   });
@@ -55,8 +32,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('service-worker.js')
-        .then(reg => console.log('SW registered:', reg))
-        .catch(err => console.log('SW registration failed:', err));
+        .then(reg => console.log('Service Worker зарегистрирован'))
+        .catch(err => console.log('Ошибка:', err));
     });
   }
 });
