@@ -1,12 +1,11 @@
-const CACHE_NAME = 'paintball-sibir-v2';
+const CACHE_NAME = 'paintball-sibir-v3';
 const ASSETS = [
   '/',
   '/index.html',
   '/style.css',
   '/script.js',
   '/manifest.json',
-  '/images/main.jpg',
-  // Добавьте другие необходимые файлы
+  '/images/main.jpg'
 ];
 
 self.addEventListener('install', (e) => {
@@ -26,11 +25,7 @@ self.addEventListener('fetch', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.map(key => {
-        if (key !== CACHE_NAME) {
-          return caches.delete(key);
-        }
-      })
+      keys.map(key => key !== CACHE_NAME && caches.delete(key))
     ))
   );
 });
